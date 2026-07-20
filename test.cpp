@@ -7,8 +7,8 @@
 int main(int arcg, char** argv) {
 
     ssw::Sequence database, query;
-    ssw::from_string("AGTCGATAGCTGACATCGATACGAGCTGGCTAGGACATTCACGATACGAGATCACATACAGACATGCACCACGGGACATTTCAAGTAGTAGACAGTAGCTAACCTAGGATC",database);
-    ssw::from_string("AGCTTGCGAGTACAGGCTACGATTACAAGT", query);
+    ssw::from_string("AGTCGATAGCTGACATCGATACGAGCTGGCTAGGACATTCACGATACGAGATCACATACAAGACCATTAGCACATAGACATGCACCACGGGACATTTCAAGTAGTAGACAGTAGCTAACCTAGGATC",database);
+    ssw::from_string("AGCTTGCGAGTACAGGCTACGATTACAAGGATCGATACAGATAGACGACAATACGATTAGT", query);
 
     std::cout << "L=" << std::setw(4) << query.size() << " QUERY   : "; ssw::print_seq(query, ' ');
     std::cout << "L=" << std::setw(4) << database.size() << " DATABASE: "; ssw::print_seq(database,' ');

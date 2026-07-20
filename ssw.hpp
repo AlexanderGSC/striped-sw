@@ -96,7 +96,7 @@ void print_seq(const Sequence& seq, const char sep) {
 }
 
 void print_score(const vScore& vS) {
-    for (Score s : vS) std::cout << std::setw(4) << s << " ";
+    for (Score s : vS) std::cout << std::setw(3) << s << " ";
     std::cout << std::endl;
 }
 
@@ -137,7 +137,7 @@ void eval(const Sequence& src, const Base b,
 
 void print_workspace(const Sequence& db, const Sequence& q,
     const Workspace& ws) {
-    const size_t ns = 4;
+    const size_t ns = 3;
     std::cout << std::setw(ns) << "   ";
     for (size_t i=0; i<db.size(); ++i) std::cout << std::setw(ns) << to_char(db[i]);
     std::cout << std::endl;
@@ -204,6 +204,7 @@ void split_sequence(const Sequence& src, Sequence& s1, Sequence& s2) {
 
 Workspace generate_query_profile(Sequence& q, size_t sizeReg) { 
     size_t numRegs = (q.size() + sizeReg - 1) / sizeReg;
+    numRegs = (numRegs < 2) ? size_t{2} : numRegs;
     Workspace qp(num_bases, 
                 vScore(numRegs * sizeReg, 0));
     for (Base a : all_bases) {
@@ -227,7 +228,7 @@ void strip_smith_waterman(Sequence& query, Sequence &database) {
     const Workspace query_profile = generate_query_profile(query, simdLength);
     //print_workspace(query_profile);
     //std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
-    //Workspace vHStore(database.size(), vScore(query.size()));
+    
     Workspace vHLoad(niter, vScore(simdLength, 0));
     Workspace vHStore(niter,vScore(simdLength, 0));
     Workspace vE(niter,vScore(simdLength, 0));
