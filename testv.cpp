@@ -4,6 +4,7 @@
 #include <string>
 #include <algorithm>
 
+
 ssw::Sequence generateSeq(size_t length) {
     ssw::Sequence s(length);
     for (size_t i=0; i<length; ++i) s[i] = i % 4;
@@ -14,15 +15,14 @@ int main(int arcg, char** argv) {
 
     riscv_ssw::Sequence database, query;
 
-    riscv_ssw::from_string("GAATGCTGATAG",query);
-    riscv_ssw::from_string("AGCTGCATAGCTGCA",database);
+    riscv_ssw::from_string("AGCGTCTCTTAGATAGAGACACAGAGAACAGCATACGAGCAGCATACAACAACACAGACATACTACACTATCATTATTTTCACCAGAACGACAGCATCATACATACATACAGACAGACAGCAGACACTACTACTACTACTACCAACGCAGACGACGACTACATACAGACGACACTACATCAGACGACGACAGCATCATCATCAATACTACTACTACTACGACAGCAGACACTACATCTACTCACATCAGAGACAGCACCTCGGAGATAATGAGAAACGACGACAACAGCAATATCATACATATCACGAGCAGCATACTAACTACTACACTACTCAGACGACAGCACTACATCAT",query);
+    riscv_ssw::from_string("AAGGCCTCTGCGCTGAAGATAGAGATAACGATTTCACGACGACACTACAGTACGACACTACAGACATCAAGCACATCACACAGAGCATTATACAGACCAGGAGcACACATCCAGAGCACTAACTACGGACAGCACATCATAACTTACTACAGCAGCAGACCATCATCGACGACGACACTCATCAGAGCAGACGACGACATCCATCAACGACGACCATACATCAGACAGGGATATAACCAGAGTACATACTACTACAGACGACGACAGCATACTATACTACCGACACTACATCATACGAGCAGACAGCATCATTTATATAACCAGGATATATCACCGACACTACATACTACAGACGACAGCAGCATACGAGACGAC",database);
     std::cout << "L=" << std::setw(4) << query.size() << " QUERY   : "; riscv_ssw::print_seq(query, ' ');
     std::cout << "L=" << std::setw(4) << database.size() << " DATABASE: "; riscv_ssw::print_seq(database,' ');
 
     riscv_ssw::Workspace ws1 = riscv_ssw::generate_query_profile2(query);
     //riscv_ssw::print_workspace(ws);
     
-    std::cout << "\n\n\n";
     ssw::Workspace ws2 = ssw::generate_query_profile(query, 16);
     //ssw::print_workspace(ws2);
     bool correct = true;
@@ -48,7 +48,7 @@ int main(int arcg, char** argv) {
     query.insert(query.begin(),ssw::Base{35}); //not used 
     database.insert(database.begin(),ssw::Base{35}); //not used
     ssw::smith_waterman(query, database, ws_test);
-    ssw::print_workspace(ws_test);
+    //ssw::print_workspace(ws_test);
 
     ssw::Sequence align_db, align_query;
     align_db.reserve(database.size());

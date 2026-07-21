@@ -302,7 +302,7 @@ void strip_smith_waterman(Sequence& query, Sequence &database) {
         std::swap(vHLoad, vHStore);
         for (size_t j=0; j < niter; ++j) {
             size_t stride = j * simdLength;
-            std::cout << "-------- IT=" << it << " DB=" << riscv_ssw::to_char(db) << " j=" << j << " stride=" << stride << "--------\n";
+            //std::cout << "-------- IT=" << it << " DB=" << riscv_ssw::to_char(db) << " j=" << j << " stride=" << stride << "--------\n";
             //cargar el query profile con el stride y sumar a vH
             //load(aux, query_profile[db],stride); //aux carga el profile
             //add(vH,aux);       //vH = vH + aux
@@ -318,7 +318,7 @@ void strip_smith_waterman(Sequence& query, Sequence &database) {
                 max_score = max_v;
                 max_i = it-1;
                 max_j = j + max_idx*niter;
-                std::cout << "New max val found! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+                //std::cout << "New max val found! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
             }
             aux = Traits::load(vE[j].data(), simdLength); 
             vH  = Traits::max(vH, aux, simdLength);
@@ -345,10 +345,10 @@ void strip_smith_waterman(Sequence& query, Sequence &database) {
             vF = Traits::max(vF, vH, simdLength);
             //max(vF,vH);       //vF = max(vH,vF)
             
-            std::cout << "vE = "; print_score(vE[j]);
-            std::cout << "vM = "; Traits::print_score(vMax,simdLength);
-            std::cout << "vF = "; Traits::print_score(vF,simdLength);
-            std::cout << "aux= "; Traits::print_score(aux,simdLength);
+            //std::cout << "vE = "; print_score(vE[j]);
+            //std::cout << "vM = "; Traits::print_score(vMax,simdLength);
+            //std::cout << "vF = "; Traits::print_score(vF,simdLength);
+            //std::cout << "aux= "; Traits::print_score(aux,simdLength);
 
             vH = Traits::load(vHLoad[j].data(), simdLength);
             //vH = vHLoad[j];
@@ -375,7 +375,7 @@ void strip_smith_waterman(Sequence& query, Sequence &database) {
                 max_score = max_v;
                 max_i = it-1;
                 max_j = j + max_idx*niter;
-                std::cout << "New max val found! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+                //std::cout << "New max val found! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
             }
             vF = Traits::add(vF, gap_extent, simdLength);
             //check if vMax has updated

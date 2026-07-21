@@ -347,18 +347,18 @@ void backtrack(const Workspace& ws,
         }
     }
 
-    std::cout << "Max row=" << max_i << " col=" << max_j << " v= " << ws[max_i][max_j] << std::endl; 
+    //std::cout << "Max row=" << max_i << " col=" << max_j << " v= " << ws[max_i][max_j] << std::endl; 
 
     size_t i = max_i, j = max_j;
     Score v = ws[i][j];
     while (v > 0 && i > 0 && j > 0)
     {
-        std::cout << "i=" << i << " j=" << j << " q[i]=" << static_cast<uint32_t>(query[i]) 
-            << " d[j]=" << static_cast<uint32_t>(database[j])
-            << " w[i][j]=" << ws[i][j];
+        //std::cout << "i=" << i << " j=" << j << " q[i]=" << static_cast<uint32_t>(query[i]) 
+        //    << " d[j]=" << static_cast<uint32_t>(database[j])
+        //    << " w[i][j]=" << ws[i][j];
         if (ws[i-1][j-1]+score[query[i]][database[j]] == v)
         {
-            std::cout << "<-- main diag" << std::endl;
+            //std::cout << "<-- main diag" << std::endl;
             if (query[i] == database[j]) {
                 align_query.push_back(query[i]);
                 align_database.push_back(database[j]); 
@@ -368,12 +368,12 @@ void backtrack(const Workspace& ws,
             }
             --i; --j;
         } else if (ws[i][j-1]+gap_init == v) {
-            std::cout << "<-- query stride" << std::endl;
+            //std::cout << "<-- query stride" << std::endl;
             align_query.push_back('E');
             align_database.push_back(database[j]);
             --j;
         } else if (ws[i-1][j]+gap_init == v) {
-            std::cout << "<-- database stride" << std::endl;
+            //std::cout << "<-- database stride" << std::endl;
             align_query.push_back(query[i]);
             align_database.push_back('E');
             --i;
