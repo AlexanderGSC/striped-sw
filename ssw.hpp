@@ -120,7 +120,8 @@ Workspace generate_query_profile(Sequence& q, size_t sizeReg) {
     return qp;
 } 
 
-void strip_smith_waterman(Sequence& query, Sequence &database) {
+Result strip_smith_waterman(Sequence& query, Sequence &database) 
+{
     const size_t simdLength   = 16; //16 elements per vector
     const size_t niter = (query.size()+simdLength-1) / simdLength;
     //std::cout << "QUERY PROFILE" << std::endl;
@@ -201,11 +202,11 @@ void strip_smith_waterman(Sequence& query, Sequence &database) {
         //std::cout << " END OF COLUMN DB=" << to_char(db) << "\n\n";
         it++; 
     }
-
-    std::cout << "===== STRIP SMITH WATERMAN ======\n";
-    std::cout << "MAX VAL FOUND " << max_score << std::endl;
-    std::cout << "POSITION AT ROW=" << max_j << " COL=" << max_i << std::endl;
-    std::cout << "=================================\n";
+    return std::make_tuple(max_j,max_i,max_score);
+    //std::cout << "===== STRIP SMITH WATERMAN ======\n";
+    //std::cout << "MAX VAL FOUND " << max_score << std::endl;
+    //std::cout << "POSITION AT ROW=" << max_j << " COL=" << max_i << std::endl;
+    //std::cout << "=================================\n";
 }
 
 

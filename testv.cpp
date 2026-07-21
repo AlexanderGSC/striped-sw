@@ -2,22 +2,18 @@
 #include "ssw.hpp"
 #include "common.hpp"
 #include <vector>
+#include <tuple>
 #include <string>
 #include <algorithm>
 
 
-ssw::Sequence generateSeq(size_t length) {
-    ssw::Sequence s(length);
-    for (size_t i=0; i<length; ++i) s[i] = i % 4;
-    return s;
-}
+
 
 int main(int arcg, char** argv) {
 
-    ssw::Sequence database, query;
+    Sequence database = ssw::generate_random_sequence(3021,781);
+    Sequence query    = ssw::generate_random_sequence(1323,432);
 
-    ssw::from_string("AGCGTCTCTTAGATAGAGACACAGAGAACAGCATACGAGCAGCATACAACAACACAGACATACTACACTATCATTATTTTCACCAGAACGACAGCATCATACATACATACAGACAGACAGCAGACACTACTACTACTACTACCAACGCAGACGACGACTACATACAGACGACACTACATCAGACGACGACAGCATCATCATCAATACTACTACTACTACGACAGCAGACACTACATCTACTCACATCAGAGACAGCACCTCGGAGATAATGAGAAACGACGACAACAGCAATATCATACATATCACGAGCAGCATACTAACTACTACACTACTCAGACGACAGCACTACATCAT",query);
-    ssw::from_string("AAGGCCTCTGCGCTGAAGATAGAGATAACGATTTCACGACGACACTACAGTACGACACTACAGACATCAAGCACATCACACAGAGCATTATACAGACCAGGAGcACACATCCAGAGCACTAACTACGGACAGCACATCATAACTTACTACAGCAGCAGACCATCATCGACGACGACACTCATCAGAGCAGACGACGACATCCATCAACGACGACCATACATCAGACAGGGATATAACCAGAGTACATACTACTACAGACGACGACAGCATACTATACTACCGACACTACATCATACGAGCAGACAGCATCATTTATATAACCAGGATATATCACCGACACTACATACTACAGACGACAGCAGCATACGAGACGAC",database);
     std::cout << "L=" << std::setw(4) << query.size() << " QUERY   : "; ssw::print_seq(query, ' ');
     std::cout << "L=" << std::setw(4) << database.size() << " DATABASE: "; ssw::print_seq(database,' ');
 
@@ -44,13 +40,16 @@ int main(int arcg, char** argv) {
         
     if (correct) std::cout << "QUERY PROFILE GENERATION IS CORRECT" << std::endl;
 
-    riscv_ssw::strip_smith_waterman(query, database);
+    Result r1 = riscv_ssw::strip_smith_waterman(query, database);
     ssw::Workspace ws_test = ssw::Workspace(query.size()+1,ssw::vScore(database.size()+1,0));
     query.insert(query.begin(),ssw::Base{35}); //not used 
     database.insert(database.begin(),ssw::Base{35}); //not used
-    ssw::smith_waterman(query, database, ws_test);
+    Result r2 = ssw::smith_waterman(query, database, ws_test);
     //ssw::print_workspace(ws_test);
-
+    std::cout << "STRIP SMITH WATERMAN " << std::endl;
+    std::cout << "I=" << std::get<0>(r1) << " J=" << std::get<1>(r1) << " SCORE=" << std::get<2>(r1) << std::endl;
+    std::cout << "SMITH WATERMAN " << std::endl;
+    std::cout << "I=" << std::get<0>(r2) << " J=" << std::get<1>(r2) << " SCORE=" << std::get<2>(r2) << std::endl;
     ssw::Sequence align_db, align_query;
     align_db.reserve(database.size());
     align_query.reserve(query.size());

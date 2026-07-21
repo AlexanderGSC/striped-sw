@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <random>
+#include <tuple>
 #include <string>
 
 namespace ssw {
@@ -17,6 +18,7 @@ using Sequence = std::vector<Base>;
 using Score    = int16_t;
 using vScore   = std::vector<Score>;
 using Workspace= std::vector<vScore>;
+using Result   = std::tuple<size_t,size_t,Score>;
 
 constexpr Score gap_init   = Score{-1};
 constexpr Score gap_extent = Score{-1};
@@ -29,6 +31,8 @@ constexpr Base A = Base{0};
 constexpr Base C = Base{1};
 constexpr Base G = Base{2};
 constexpr Base T = Base{3};
+
+
 
 constexpr std::array<Base,num_bases> all_bases {A,C,G,T};
 
@@ -98,7 +102,8 @@ void print_workspace(const Workspace& ws) {
 }
 
 Sequence generate_random_sequence(const size_t length, const size_t seed) {
-    Sequence s(length, Base{0});
+    Sequence s;
+    s.reserve(length);
     std::random_device rd;
     std::mt19937 gen(seed);
     std::uniform_int_distribution<uint8_t> dist(A,T);
@@ -109,8 +114,14 @@ Sequence generate_random_sequence(const size_t length, const size_t seed) {
     return s;
 }
 
+Sequence generateSeq(size_t length) {
+    Sequence s(length);
+    for (size_t i=0; i<length; ++i) s[i] = i % 4;
+    return s;
+}
 
-void smith_waterman(const Sequence& query, const Sequence& database,
+
+Result smith_waterman(const Sequence& query, const Sequence& database,
         Workspace& ws)
 {
     Score max_score = Score{0};
@@ -127,10 +138,11 @@ void smith_waterman(const Sequence& query, const Sequence& database,
             }
         }
     }
-    std::cout << "======== SMITH WATERMAN =========\n";
-    std::cout << "MAX VAL FOUND " << max_score << std::endl;
-    std::cout << "POSITION AT ROW=" << max_i-1 << " COL=" << max_j-1 << std::endl;
-    std::cout << "=================================\n";
+    return std::make_tuple(max_i-1,max_j-1,max_score);
+    //std::cout << "======== SMITH WATERMAN =========\n";
+    //std::cout << "MAX VAL FOUND " << max_score << std::endl;
+    //std::cout << "POSITION AT ROW=" << max_i-1 << " COL=" << max_j-1 << std::endl;
+    //std::cout << "=================================\n";
 }
 
 

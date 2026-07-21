@@ -97,7 +97,7 @@ Workspace generate_query_profile2(Sequence& q) {
 
 
 //  riscv64-linux-gnu-g++ -march=rv64gcv -mabi=lp64d -std=c++23 -static testv.cpp -o testv
-void strip_smith_waterman(Sequence& query, Sequence &database) {
+Result strip_smith_waterman(Sequence& query, Sequence &database) {
     using Traits = rvv_traits<Score, 1>;
     using T      = Traits::elem_vector_type;
     using I      = Traits::index_vector_type;
@@ -231,10 +231,11 @@ void strip_smith_waterman(Sequence& query, Sequence &database) {
         it++; 
     }
 
-    std::cout << "=== VECT STRIP SMITH WATERMAN ====\n";
-    std::cout << "MAX VAL FOUND " << max_score << std::endl;
-    std::cout << "POSITION AT ROW=" << max_j << " COL=" << max_i << std::endl;
-    std::cout << "=================================\n";
+    return std::make_tuple(max_j,max_i,max_score);
+    //std::cout << "=== VECT STRIP SMITH WATERMAN ====\n";
+    //std::cout << "MAX VAL FOUND " << max_score << std::endl;
+    //std::cout << "POSITION AT ROW=" << max_j << " COL=" << max_i << std::endl;
+    //std::cout << "=================================\n";
 }
 
 }
