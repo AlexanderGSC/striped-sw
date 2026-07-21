@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <random>
+#include <string>
 
 namespace ssw {
 
@@ -107,5 +108,81 @@ Sequence generate_random_sequence(const size_t length, const size_t seed) {
 
     return s;
 }
+
+
+void smith_waterman(const Sequence& query, const Sequence& database,
+        Workspace& ws)
+{
+    Score max_score = Score{0};
+    size_t max_i=1, max_j=1;
+    for (auto i=1; i<query.size(); ++i) {
+        for (auto j=1; j<database.size(); ++j) {
+            Base rowv = query[i]; 
+            Base colv = database[j];
+            ws[i][j] = std::max<int>({ws[i-1][j-1]+score[rowv][colv], 
+            ws[i-1][j] + gap_init, ws[i][j-1] + gap_init, 0});
+            if (ws[i][j] > max_score) {
+                max_score = ws[i][j];
+                max_i = i; max_j=j;
+            }
+        }
+    }
+    std::cout << "======== SMITH WATERMAN =========\n";
+    std::cout << "MAX VAL FOUND " << max_score << std::endl;
+    std::cout << "POSITION AT ROW=" << max_i-1 << " COL=" << max_j-1 << std::endl;
+    std::cout << "=================================\n";
+}
+
+
+void backtrack(const Workspace& ws, 
+    const Sequence& database, const Sequence& query,
+    Sequence& align_database, Sequence& align_query) {
+
+    size_t max_i=0, max_j=0;
+    for (size_t i=0; i < query.size() ; ++i) {
+        for (size_t j=0; j < database.size(); ++j) {
+            if (ws[i][j] > ws[max_i][max_j]) {
+                max_i=i; max_j=j;
+            }
+        }
+    }
+
+    //std::cout << "Max row=" << max_i << " col=" << max_j << " v= " << ws[max_i][max_j] << std::endl; 
+
+    size_t i = max_i, j = max_j;
+    Score v = ws[i][j];
+    while (v > 0 && i > 0 && j > 0)
+    {
+        //std::cout << "i=" << i << " j=" << j << " q[i]=" << static_cast<uint32_t>(query[i]) 
+        //    << " d[j]=" << static_cast<uint32_t>(database[j])
+        //    << " w[i][j]=" << ws[i][j];
+        if (ws[i-1][j-1]+score[query[i]][database[j]] == v)
+        {
+            //std::cout << "<-- main diag" << std::endl;
+            if (query[i] == database[j]) {
+                align_query.push_back(query[i]);
+                align_database.push_back(database[j]); 
+            } else {
+                align_query.push_back('-');
+                align_database.push_back('-');
+            }
+            --i; --j;
+        } else if (ws[i][j-1]+gap_init == v) {
+            //std::cout << "<-- query stride" << std::endl;
+            align_query.push_back('E');
+            align_database.push_back(database[j]);
+            --j;
+        } else if (ws[i-1][j]+gap_init == v) {
+            //std::cout << "<-- database stride" << std::endl;
+            align_query.push_back(query[i]);
+            align_database.push_back('E');
+            --i;
+        }
+        v = ws[i][j];
+    }
+    std::reverse(align_query.begin(),align_query.end());
+    std::reverse(align_database.begin(),align_database.end());
+}
+
 
 }
