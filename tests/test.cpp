@@ -1,6 +1,6 @@
-#include "rvv-ssw.hpp"
-#include "ssw.hpp"
-#include "common.hpp"
+#include <ssw/rvv-ssw.hpp>
+#include <ssw/common.hpp>
+#include <ssw/ssw.hpp>
 #include <vector>
 #include <tuple>
 #include <string>
@@ -11,8 +11,8 @@
 
 int main(int arcg, char** argv) {
 
-    Sequence database = ssw::generate_random_sequence(3021,781);
-    Sequence query    = ssw::generate_random_sequence(1323,432);
+    Sequence database = ssw::generate_random_sequence(343,67);
+    Sequence query    = ssw::generate_random_sequence(134,84);
 
     std::cout << "L=" << std::setw(4) << query.size() << " QUERY   : "; ssw::print_seq(query, ' ');
     std::cout << "L=" << std::setw(4) << database.size() << " DATABASE: "; ssw::print_seq(database,' ');
@@ -64,6 +64,12 @@ int main(int arcg, char** argv) {
     std::cout << std::endl;
     for (size_t i=0; i<align_db.size(); ++i) std::cout << ssw::to_char(align_query[i]) << " ";
     std::cout << std::endl;
+    if (std::get<0>(r1) != std::get<0>(r2) || 
+        std::get<1>(r1) != std::get<1>(r2) || std::get<2>(r1) != std::get<2>(r2)) {
+        correct = false;
+        std::cerr << "Error on alignment." << std::endl;
+    }
 
-    return 0;
+    if (correct) return EXIT_SUCCESS;
+    else return EXIT_FAILURE;
 }
