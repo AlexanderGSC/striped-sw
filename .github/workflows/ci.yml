@@ -35,7 +35,6 @@ jobs:
       run: |
         cmake --build build
 
-    - name: Run Tests via QEMU
+    - name: Run Tests via CTest
       run: |
-        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_test1
-        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_test2
+        cd build && ctest --output-on-failure

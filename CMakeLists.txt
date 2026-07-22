@@ -22,5 +22,6 @@ target_link_options(unit_test2 PRIVATE -static)
 
 enable_testing()
 
-add_test(NAME Test1 COMMAND qemu-riscv64 -L /usr/riscv64-linux-gnu $<TARGET_FILE:unit_test1>)
-add_test(NAME Test2 COMMAND qemu-riscv64 -L /usr/riscv64-linux-gnu $<TARGET_FILE:unit_test2>)
+set(QEMU_CMD qemu-riscv64 -cpu rv64,v=true,vlen=256,vext_spec=v1.0)
+add_test(NAME Test1 COMMAND ${QEMU_CMD} $<TARGET_FILE:unit_test1>)
+add_test(NAME Test2 COMMAND ${QEMU_CMD} $<TARGET_FILE:unit_test2>)
