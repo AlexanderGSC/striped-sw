@@ -37,5 +37,5 @@ jobs:
 
     - name: Run Tests via QEMU
       run: |
-        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_tests1
-        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_tests2
+        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_test1
+        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_test2
