@@ -132,7 +132,7 @@ Result smith_waterman(const Sequence& query, const Sequence& database,
             Base colv = database[j];
             ws[i][j] = std::max<int>({ws[i-1][j-1]+score[rowv][colv], 
             ws[i-1][j] + gap_init, ws[i][j-1] + gap_init, 0});
-            if (ws[i][j] > max_score) {
+            if (ws[i][j] >= max_score) {
                 max_score = ws[i][j];
                 max_i = i; max_j=j;
             }

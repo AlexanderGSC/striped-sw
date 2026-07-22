@@ -1,4 +1,4 @@
-name: C++ CI / Build & Test
+name: C++ CI / RISC-V RVV Tests
 
 on:
   push:
@@ -14,19 +14,28 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Clang & Build Tools
+    - name: Install Toolchain and QEMU
       run: |
         sudo apt-get update
-        sudo apt-get install -y clang cmake ninja-build
+        sudo apt-get install -y \
+          cmake \
+          ninja-build \
+          g++-riscv64-linux-gnu \
+          gcc-riscv64-linux-gnu \
+          qemu-user
 
     - name: Configure CMake
       run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=clang++
+        cmake -B build \
+          -DCMAKE_C_COMPILER=riscv64-linux-gnu-gcc \
+          -DCMAKE_CXX_COMPILER=riscv64-linux-gnu-g++ \
+          -DCMAKE_BUILD_TYPE=Release
 
     - name: Build Project
       run: |
-        cmake --build build --config Release
+        cmake --build build
 
-    - name: Run Unit Tests
+    - name: Run Tests via QEMU
       run: |
-        cd build && ctest --output-on-failure
+        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_tests1
+        qemu-riscv64 -L /usr/riscv64-linux-gnu ./build/unit_tests2
