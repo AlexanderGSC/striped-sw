@@ -1,4 +1,16 @@
-strategy:
+name: C++ CI / RISC-V RVV Tests
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.compiler }})
+    runs-on: ubuntu-latest
+    strategy:
       fail-fast: false
       matrix:
         include:
@@ -12,32 +24,32 @@ strategy:
             extra_flags: "-DCMAKE_CXX_FLAGS=--target=riscv64-linux-gnu -DCMAKE_EXE_LINKER_FLAGS=--target=riscv64-linux-gnu"
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install Toolchain and QEMU
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          cmake \
-          ninja-build \
-          g++-riscv64-linux-gnu \
-          gcc-riscv64-linux-gnu \
-          clang \
-          qemu-user
+      - name: Install Toolchain and QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            g++-riscv64-linux-gnu \
+            gcc-riscv64-linux-gnu \
+            clang \
+            qemu-user
 
-    - name: Configure CMake
-      run: |
-        cmake -B build \
-          -DCMAKE_C_COMPILER=${{ matrix.cc }} \
-          -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
-          ${{ matrix.extra_flags }} \
-          -DCMAKE_BUILD_TYPE=Release
+      - name: Configure CMake
+        run: |
+          cmake -B build \
+            -DCMAKE_C_COMPILER=${{ matrix.cc }} \
+            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} \
+            ${{ matrix.extra_flags }} \
+            -DCMAKE_BUILD_TYPE=Release
 
-    - name: Build Project
-      run: |
-        cmake --build build
+      - name: Build Project
+        run: |
+          cmake --build build
 
-    - name: Run Tests via CTest
-      run: |
-        cd build && ctest --output-on-failure
+      - name: Run Tests via CTest
+        run: |
+          cd build && ctest --output-on-failure
