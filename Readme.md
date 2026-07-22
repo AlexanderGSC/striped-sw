@@ -1,6 +1,8 @@
 # Sequence Alignment Using the Vectorised Smith-Waterman Algorithm
 
 [![CI Build & Test](https://github.com/AlexanderGSC/striped-sw/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexanderGSC/striped-sw/actions)
+![Compiler GCC](https://img.shields.io/badge/GCC-13.3+-A42E2B?style=flat&logo=gnu)
+![Compiler Clang](https://img.shields.io/badge/Clang-18+-074B83?style=flat&logo=llvm)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)
 ![Architecture](https://img.shields.io/badge/Architecture-RISC--V%20%7C%20x86__64-orange.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
