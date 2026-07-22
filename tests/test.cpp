@@ -7,7 +7,7 @@
 #include <algorithm>
 
 
-
+// riscv64-linux-gnu-g++ -march=rv64gcv -mabi=lp64d -std=c++23 -Iinclude -static tests/test.cpp -o testv
 
 int main(int arcg, char** argv) {
 

@@ -12,6 +12,10 @@
 !Makefile
 !CMakeLists.txt
 !LICENSE
+!.github/
+!*.yml
+!*.yaml
+
 
 # exe
 *.exe
