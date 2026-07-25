@@ -4,31 +4,29 @@ project(striped_sw_simd CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(include)
-
-add_executable(benchmark1 benchmarks/bench1.cpp)
-
-add_executable(unit_test1 tests/test.cpp)
-add_executable(unit_test2 tests/test2.cpp)
-
+# Flags for RISC-V Vector
 set(RISCV_FLAGS "-march=rv64gcv" "-mabi=lp64d")
-set(OPT_FLAGS "-O3 -static")
 
-target_compile_options(benchmark1 PRIVATE ${OPT_FLAGS} ${RISCV_FLAGS})
-
-target_compile_options(unit_test1 PRIVATE ${RISCV_FLAGS})
-target_compile_options(unit_test2 PRIVATE ${RISCV_FLAGS})
-
+# Executable: Benchmark
+add_executable(benchmark1 benchmarks/bench1.cpp)
+target_include_directories(benchmark1 PRIVATE include)
+target_compile_options(benchmark1 PRIVATE ${RISCV_FLAGS} -O3)
 target_link_options(benchmark1 PRIVATE -static)
 
+# Executables: Unit Tests
+add_executable(unit_test1 tests/test.cpp)
+target_include_directories(unit_test1 PRIVATE include)
+target_compile_options(unit_test1 PRIVATE ${RISCV_FLAGS})
 target_link_options(unit_test1 PRIVATE -static)
+
+add_executable(unit_test2 tests/test2.cpp)
+target_include_directories(unit_test2 PRIVATE include)
+target_compile_options(unit_test2 PRIVATE ${RISCV_FLAGS})
 target_link_options(unit_test2 PRIVATE -static)
 
-
-
-
+# Testing:  CTest + QEMU
 enable_testing()
-
 set(QEMU_CMD qemu-riscv64 -cpu rv64,v=true,vlen=256,vext_spec=v1.0)
+
 add_test(NAME Test1 COMMAND ${QEMU_CMD} $<TARGET_FILE:unit_test1>)
 add_test(NAME Test2 COMMAND ${QEMU_CMD} $<TARGET_FILE:unit_test2>)
