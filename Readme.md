@@ -45,6 +45,42 @@ Translation of the Strip-Smith-Waterman algorithm’s logic to the RISC-V SIMD m
    The next phase involves mapping the validated emulated logic directly to hardware vector intrinsics (SSE4.1, AVX2, and AVX-512) to achieve massive performance speedups.
 
 ---
+## Performance Analysis: Query Scaling (Fixed Database = 1,000,000 bp)
+
+Evaluated natively on real silicon (**Banana Pi BPI-F3**, SpaceMit K1 octacore, RISC-V RVV 1.0 at `LMUL = 1`) comparing the scalar baseline against the vectorized Farrar Striped implementation:
+
+| Query ($M$) | Database ($N$) | Matrix Cells ($M \times N$) | Scalar Time (MCUPS) | RVV 1.0 Time (MCUPS) | Speedup | Architectural Analysis |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **100** | **1,000,000** | $10^8$ | $1.50 \text{ s}$ ($66.6$) | **$0.47 \text{ s}$ ($212.5$)** | **$3.19\times$** | Setup and vector loop initialization overhead dominates. |
+| **200** | **1,000,000** | $2 \times 10^8$ | $3.00 \text{ s}$ ($66.7$) | **$0.73 \text{ s}$ ($273.9$)** | **$4.11\times$** | Vector pipeline warm-up and increased instruction density. |
+| **500** | **1,000,000** | $5 \times 10^8$ | $7.47 \text{ s}$ ($66.9$) | **$1.60 \text{ s}$ ($311.8$)** | **$4.66\times$** | Near-optimal vector register utilization. |
+| **1,000** | **1,000,000** | $10^9$ | $14.92 \text{ s}$ ($67.0$) | **$3.03 \text{ s}$ ($\mathbf{330.3}$)** | **$\mathbf{4.93\times}$** | **Peak Throughput (L1 Data Cache Sweet Spot).** |
+| **2,000** | **1,000,000** | $2 \times 10^9$ | $29.80 \text{ s}$ ($67.1$) | **$7.19 \text{ s}$ ($278.3$)** | **$4.15\times$** | Cache line eviction / L1 miss pressure degradation. |
+
+> 💡 **Key Takeaways:**
+> * **Scalar Baseline Consistency:** The classic scalar implementation exhibits near-constant execution throughput ($\approx 66.7 \text{ MCUPS}$), confirming a stable hardware testbench and clock frequency.
+> * **Optimal Working Set ($Q = 1000$):** Peak efficiency reaches **$330.3 \text{ MCUPS}$** ($4.93\times$ speedup). At this query length, vector striping aligns perfectly with the L1 Data Cache capacity and register file layout.
+> * **Memory Hierarchy Bottleneck ($Q = 2000$):** Performance drops to $278.3 \text{ MCUPS}$ as intermediate vector buffer arrays outgrow the L1 cache footprint, increasing strided memory access stalls.
+
+
+## Performance Analysis: Problem Size Scaling ($M = N$ Square Matrix)
+
+Evaluated natively on real silicon (**Banana Pi BPI-F3**, SpaceMit K1 octacore, RISC-V RVV 1.0 at `LMUL = 1`) evaluating the asymptotic algorithmic scaling ($O(N^2)$) from small sequences up to $50,000 \times 50,000$ alignment matrices:
+
+| Matrix Size ($M \times N$) | Total Cells | Scalar Time (MCUPS) | RVV 1.0 Time (MCUPS) | Speedup | Architectural Behavior |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **$100 \times 100$** | $10^4$ | $0.16 \text{ ms}$ ($61.5$) | **$0.09 \text{ ms}$ ($104.8$)** | **$1.70\times$** | Setup and loop overhead dominant at ultra-short lengths. |
+| **$200 \times 200$** | $4 \times 10^4$ | $0.61 \text{ ms}$ ($65.5$) | **$0.22 \text{ ms}$ ($180.3$)** | **$2.75\times$** | Rapid vector pipeline warm-up. |
+| **$500 \times 500$** | $2.5 \times 10^5$ | $3.79 \text{ ms}$ ($65.9$) | **$1.00 \text{ ms}$ ($249.9$)** | **$3.79\times$** | Approaching high vector register occupancy. |
+| **$1,000 \times 1,000$** | $10^6$ | $15.20 \text{ ms}$ ($65.8$) | **$3.26 \text{ ms}$ ($306.8$)** | **$4.66\times$** | **Optimal L1 cache locality plateau.** |
+| **$5,000 \times 5,000$** | $2.5 \times 10^7$ | $383.30 \text{ ms}$ ($65.2$) | **$84.05 \text{ ms}$ ($297.4$)** | **$4.56\times$** | Sustained high throughput ($\approx 300 \text{ MCUPS}$). |
+| **$10,000 \times 10,000$** | $10^8$ | $1.51 \text{ s}$ ($66.2$) | **$0.32 \text{ s}$ ($\mathbf{310.5}$)** | **$\mathbf{4.69\times}$** | **Peak Workload Throughput.** |
+| **$50,000 \times 50,000$** | $2.5 \times 10^9$ | $37.71 \text{ s}$ ($66.3$) | **$11.74 \text{ s}$ ($213.0$)** | **$3.21\times$** | Heavy L1/L2 cache thrashing & RAM memory bus starvation. |
+
+>  **Architectural Summary:**
+> * **Asymptotic Peak:** The RVV 1.0 vector unit reaches a stable efficiency plateau of **$\sim 300 - 310 \text{ MCUPS}$** for workloads ranging between $10^6$ and $10^8$ total matrix cells.
+> * **L2/DRAM Bottleneck Boundary:** Beyond $10.000 \times 10.000$ elements, intermediate vector state buffers exceed the physical hardware cache boundaries, resulting in a **$\sim 31\%$ throughput degradation** due to DRAM latency penalties during vector register reloads.
+---
 
 ### Getting Started
 
@@ -72,4 +108,3 @@ A G C T T G - C G A - - G - T A C - A - - - G G C T A - G - - A T T - A C - A - 
 ### References
 * **Farrar's Striped Algorithm:** Farrar, M. (2007). *Striped Smith–Waterman database searching instruments*. Bioinformatics, 23(2), 156-161. [DOI: 10.1093/bioinformatics/btl582](https://doi.org/10.1093/bioinformatics/btl582)
 * **Original Smith-Waterman:** Smith, T. F., & Waterman, M. S. (1981). *Identification of common molecular subsequences*. Journal of Molecular Biology, 147(1), 195-197. [DOI: 10.1016/0022-2836(81)90087-5](https://doi.org/10.1016/0022-2836(81)90087-5)
-

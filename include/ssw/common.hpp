@@ -105,7 +105,7 @@ Sequence generate_random_sequence(const size_t length, const size_t seed) {
     Sequence s;
     s.reserve(length);
     std::random_device rd;
-    std::mt19937 gen(seed);
+    std::mt19937 gen(seed == 0 ? rd() : seed);
     std::uniform_int_distribution<uint8_t> dist(A,T);
 
     std::generate_n(std::back_inserter(s), length, 

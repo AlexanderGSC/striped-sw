@@ -6,13 +6,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(include)
 
+add_executable(benchmark1 benchmarks/bench1.cpp)
+
 add_executable(unit_test1 tests/test.cpp)
 add_executable(unit_test2 tests/test2.cpp)
 
 set(RISCV_FLAGS "-march=rv64gcv" "-mabi=lp64d")
+set(OPT_FLAGS "-O3 -static")
+
+target_compile_options(benchmark1 PRIVATE ${OPT_FLAGS} ${RISCV_FLAGS})
 
 target_compile_options(unit_test1 PRIVATE ${RISCV_FLAGS})
 target_compile_options(unit_test2 PRIVATE ${RISCV_FLAGS})
+
+target_link_options(benchmark1 PRIVATE -static)
 
 target_link_options(unit_test1 PRIVATE -static)
 target_link_options(unit_test2 PRIVATE -static)

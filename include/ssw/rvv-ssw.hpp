@@ -107,7 +107,7 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
     niter = (niter < 2) ? 2 : niter;
 
     const Workspace query_profile = generate_query_profile2(query);
-    std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
+    //std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
    
     Workspace vHLoad(niter, vScore(simdLength, 0));
     Workspace vHStore(niter,vScore(simdLength, 0));
