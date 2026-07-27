@@ -57,9 +57,9 @@ Workspace generate_query_profile(Sequence& q) {
     return qp;
 }
 
-
+template <std::size_t LMUL>
 Workspace generate_query_profile2(Sequence& q) {
-    const size_t LMUL = 2;
+    //const size_t LMUL = 2;
     using Traits = rvv_traits<int16_t,LMUL>;
     using T = Traits::vector_t;
     using I = Traits::index_v_t;
@@ -100,8 +100,9 @@ Workspace generate_query_profile2(Sequence& q) {
 
 
 //  riscv64-linux-gnu-g++ -march=rv64gcv -mabi=lp64d -std=c++23 -static testv.cpp -o testv
+template <std::size_t LMUL>
 Result strip_smith_waterman(Sequence& query, Sequence &database) {
-    const size_t LMUL = 2;
+    //const size_t LMUL = 2;
     using Traits = rvv_traits<Score, LMUL>;
     using T      = Traits::vector_t;
     using I      = Traits::index_v_t;
@@ -110,8 +111,8 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
     size_t niter = (query.size()+simdLength-1) / simdLength;
     niter = (niter < 2) ? 2 : niter;
 
-    const Workspace query_profile = generate_query_profile2(query);
-    //std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
+    const Workspace query_profile = generate_query_profile2<LMUL>(query);
+    std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
    
     Workspace vHLoad(niter, vScore(simdLength, 0));
     Workspace vHStore(niter,vScore(simdLength, 0));

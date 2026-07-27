@@ -7,9 +7,12 @@
 #include <algorithm>
 
 
+
 // riscv64-linux-gnu-g++ -march=rv64gcv -mabi=lp64d -std=c++23 -Iinclude -static tests/test.cpp -o testv
 
 int main(int arcg, char** argv) {
+
+    constexpr size_t LMUL = 1;
 
     Sequence database = ssw::generate_random_sequence(343,67);
     Sequence query    = ssw::generate_random_sequence(134,84);
@@ -17,8 +20,8 @@ int main(int arcg, char** argv) {
     std::cout << "L=" << std::setw(4) << query.size() << " QUERY   : "; ssw::print_seq(query, ' ');
     std::cout << "L=" << std::setw(4) << database.size() << " DATABASE: "; ssw::print_seq(database,' ');
     bool correct = true;
-    
-    Result r1 = riscv_ssw::strip_smith_waterman(query, database);
+
+    Result r1 = riscv_ssw::strip_smith_waterman<LMUL>(query, database);
     ssw::Workspace ws_test = ssw::Workspace(query.size()+1,ssw::vScore(database.size()+1,0));
     query.insert(query.begin(),ssw::Base{35}); //not used 
     database.insert(database.begin(),ssw::Base{35}); //not used

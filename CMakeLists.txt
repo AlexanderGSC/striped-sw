@@ -7,11 +7,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Flags for RISC-V Vector
 set(RISCV_FLAGS "-march=rv64gcv" "-mabi=lp64d")
 
-# Executable: Benchmark
-add_executable(benchmark1 benchmarks/bench1.cpp)
-target_include_directories(benchmark1 PRIVATE include)
-target_compile_options(benchmark1 PRIVATE ${RISCV_FLAGS} -O3)
-target_link_options(benchmark1 PRIVATE -static)
+# Executable: Benchmarks
+set(LMUL_VALUES 1 2 4)
+
+foreach(lmul ${LMUL_VALUES})
+    set(EXEC_NAME "bench1m${lmul}")
+    
+    add_executable(${EXEC_NAME} benchmarks/bench1.cpp)
+    target_include_directories(${EXEC_NAME} PRIVATE include)
+    
+    # -DCONFIG_LMUL
+    target_compile_options(${EXEC_NAME} PRIVATE ${RISCV_FLAGS} -O3 -DCONFIG_LMUL=${lmul})
+    target_link_options(${EXEC_NAME} PRIVATE -static)
+endforeach()
 
 # Executables: Unit Tests
 add_executable(unit_test1 tests/test.cpp)

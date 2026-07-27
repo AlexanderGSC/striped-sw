@@ -8,6 +8,11 @@
 #include <chrono>
 #include <fstream>
 
+
+#ifndef CONFIG_LMUL
+#define CONFIG_LMUL 1
+#endif
+
 // riscv64-linux-gnu-g++ -march=rv64gcv -mabi=lp64d -std=c++23 -Iinclude -static tests/test.cpp -o testv
 void add_benchmark(const std::string filename,
             const std::vector<Result> r) {
@@ -47,7 +52,7 @@ int main(int argc, char* argv[]) {
     std::cout << "DATABASE LENGTH=" << std::setw(4) << database.size() << std::endl; 
 
     const auto s1 = std::chrono::steady_clock::now();
-    Result r1 = riscv_ssw::strip_smith_waterman(query, database);
+    Result r1 = riscv_ssw::strip_smith_waterman<CONFIG_LMUL>(query, database);
     const auto e1 = std::chrono::steady_clock::now();
 
     // barrier avoiding compilers reordenation  
@@ -64,7 +69,7 @@ int main(int argc, char* argv[]) {
     const double gcups1 = mcups1 / 1000.0;               // Giga Cell Updates / sec
 
     // 4. Salida por consola (fuera del bloque de tiempo)
-    std::cout << "--- STRIP SMITH-WATERMAN RISC-V RVV (LMUL=1) ---\n"
+    std::cout << "--- STRIP SMITH-WATERMAN RISC-V RVV (LMUL=" << CONFIG_LMUL << ") ---\n"
           << "Alignment: I=" << std::get<0>(r1) 
           << " J=" << std::get<1>(r1) 
           << " SCORE=" << std::get<2>(r1) << "\n"
@@ -105,7 +110,6 @@ int main(int argc, char* argv[]) {
     
     auto speedup = seconds2 / seconds1;
     std::cout << "Speedup: " << speedup << std::endl;
-
 
     return EXIT_SUCCESS;
 

@@ -11,6 +11,8 @@
 
 int main(int arcg, char** argv) {
 
+    constexpr size_t LMUL = 1;
+
     constexpr size_t ntests = 10;
     constexpr std::array<size_t,ntests> query_length {123, 213, 413, 327, 101, 53, 91, 900, 456, 390};
     constexpr std::array<size_t,ntests> db_length    {543, 592, 1035,405, 901, 190, 231, 2091, 890, 790};
@@ -29,7 +31,7 @@ int main(int arcg, char** argv) {
         Sequence query    = ssw::generate_random_sequence(dl,d_seed);
 
 
-        Result r1 = riscv_ssw::strip_smith_waterman(query, database);
+        Result r1 = riscv_ssw::strip_smith_waterman<LMUL>(query, database);
 
         ssw::Workspace ws_test = ssw::Workspace(query.size()+1,ssw::vScore(database.size()+1,0));
         query.insert(query.begin(),ssw::Base{35}); //not used 
