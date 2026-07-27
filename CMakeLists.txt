@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(RISCV_FLAGS "-march=rv64gcv" "-mabi=lp64d")
 
 # Executable: Benchmarks
-set(LMUL_VALUES 1 2 4)
+set(LMUL_VALUES 1 2 4 8)
 
 foreach(lmul ${LMUL_VALUES})
     set(EXEC_NAME "bench1m${lmul}")
