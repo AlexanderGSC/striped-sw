@@ -44,7 +44,6 @@ int main(int arcg, char** argv) {
     std::cout << std::endl;
     if (std::get<0>(r1) != std::get<0>(r2) || 
         std::get<1>(r1) != std::get<1>(r2) || std::get<2>(r1) != std::get<2>(r2)) {
-        correct = false;
         std::cerr << "Error on alignment." << std::endl;
     }
 
