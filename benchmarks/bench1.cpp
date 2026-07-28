@@ -36,12 +36,11 @@ int main(int argc, char* argv[]) {
 
     if (argc < 3) {
         std::cout << "Benchmark1: random database and query comparison." << std::endl;
-        std::cout << "Usage: bench1 <database size> <query size>" << std::endl;
+        std::cout << "Usage: bench2 <database size> <query size>" << std::endl;
         return EXIT_SUCCESS;
     }
 
-    std::string filename = static_cast<std::string>("bench1_") + argv[1] + argv[2] + ".csv";
-    std::vector<Result> r(2);
+
     size_t database_length = static_cast<size_t>(atoi(argv[1]));
     size_t query_length    = static_cast<size_t>(atoi(argv[2]));
     size_t seed = 0; //seed 0 means random values

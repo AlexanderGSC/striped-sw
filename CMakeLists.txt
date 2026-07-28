@@ -21,6 +21,17 @@ foreach(lmul ${LMUL_VALUES})
     target_link_options(${EXEC_NAME} PRIVATE -static)
 endforeach()
 
+foreach(lmul ${LMUL_VALUES})
+    set(EXEC_NAME "bench2m${lmul}")
+    
+    add_executable(${EXEC_NAME} benchmarks/bench2.cpp)
+    target_include_directories(${EXEC_NAME} PRIVATE include)
+    
+    # -DCONFIG_LMUL
+    target_compile_options(${EXEC_NAME} PRIVATE ${RISCV_FLAGS} -O3 -DCONFIG_LMUL=${lmul})
+    target_link_options(${EXEC_NAME} PRIVATE -static)
+endforeach()
+
 # Executables: Unit Tests
 add_executable(unit_test1 tests/test.cpp)
 target_include_directories(unit_test1 PRIVATE include)
