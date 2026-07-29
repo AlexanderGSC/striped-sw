@@ -69,7 +69,6 @@ int main(int argc, char* argv[]) {
     std::cout << "QUERY LENGTH=" << std::setw(4) << query.size() << std::endl;
     std::cout << "DATABASE LENGTH=" << std::setw(4) << database.size() << std::endl; 
 
-    // Inicializar contadores reales de la placa
     PerfCounter cycles(PERF_TYPE_HARDWARE, PERF_COUNT_HW_CPU_CYCLES);
     PerfCounter instructions(PERF_TYPE_HARDWARE, PERF_COUNT_HW_INSTRUCTIONS);
     PerfCounter l1_loads(PERF_TYPE_HW_CACHE, 
@@ -80,13 +79,13 @@ int main(int argc, char* argv[]) {
     PerfCounter frontend_stalls(PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_FRONTEND);
     PerfCounter backend_stalls(PERF_TYPE_HARDWARE, PERF_COUNT_HW_STALLED_CYCLES_BACKEND);
     
-    // Cambiamos los contadores no soportados por saltos (Branches)
+    
     PerfCounter branches(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_INSTRUCTIONS);
     PerfCounter branch_misses(PERF_TYPE_HARDWARE, PERF_COUNT_HW_BRANCH_MISSES);
 
     const auto start = std::chrono::steady_clock::now();
     
-    // Ejecución del Kernel
+    // Kernel execution
     Result r = riscv_ssw::strip_smith_waterman<CONFIG_LMUL>(query, database);
     
     const auto finish = std::chrono::steady_clock::now();

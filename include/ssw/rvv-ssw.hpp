@@ -17,7 +17,6 @@ using namespace ssw;
 
 namespace riscv_ssw {
 
-//constexpr size_t LMUL = 2;
 constexpr size_t SEW  = sizeof(Score);
 
 Workspace generate_query_profile(Sequence& q) { 
@@ -58,15 +57,16 @@ Workspace generate_query_profile(Sequence& q) {
 }
 
 template <std::size_t LMUL>
-Workspace generate_query_profile2(Sequence& q) {
+Workspace generate_query_profile2(const Sequence& q) {
     //const size_t LMUL = 2;
     using Traits = rvv_traits<int16_t,LMUL>;
     using T = Traits::vector_t;
     using I = Traits::index_v_t;
 
-    const size_t VLEN= __riscv_vlenb(); // en bytes
-    const size_t sizeReg = (VLEN * LMUL) / (SEW); // 32*1/2 = 16 elems 
-    size_t numRegs = (q.size() + sizeReg - 1) / sizeReg; // 38/16 = 3 registros
+    const size_t VLEN= __riscv_vlenb(); // bytes
+    //const size_t sizeReg = (VLEN * LMUL) / (SEW);  
+    const size_t sizeReg = Traits::setvl(-1);
+    size_t numRegs = (q.size() + sizeReg - 1) / sizeReg; 
     numRegs = (numRegs < 2) ? 2 : numRegs; //at least 2 regs
     
     const size_t efectiveVLEN = (q.size()+numRegs-1) / numRegs;
@@ -75,8 +75,7 @@ Workspace generate_query_profile2(Sequence& q) {
     
     for (Base a : all_bases) {
         //const size_t max_vl = sizeReg;
-        const size_t max_vl = Traits::setvl(sizeReg);
-        size_t i = 0;
+        const size_t max_vl = Traits::setvl(-1);
         for (size_t n=0; n<numRegs; ++n ) { 
             T val = Traits::move(0,max_vl); //val=0
             size_t vl = 0;
@@ -87,11 +86,11 @@ Workspace generate_query_profile2(Sequence& q) {
             if (vl > 0) {
                 I idx = Traits::ldse(&q[n], static_cast<ptrdiff_t>(numRegs), vl);
                 idx = Traits::sll(idx, 1, vl);
-                // loads Score (int16_t) from score matrix for elem a with stride = idx
+                // loads Score from score matrix for elem a with stride = idx
                 //loading a max of 32 elements requires a LMUL=2 for int16_t
-                val = Traits::loxe(score[a].data(),idx, vl);
+                val = Traits::loxe(score[a].data(),idx, vl);  
             }
-            Traits::store (&qp[a][n*max_vl], val, max_vl);
+            Traits::store(&qp[a][n*max_vl], val, vl);
         }
     }
     return qp;
@@ -107,7 +106,7 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
     using T      = Traits::vector_t;
     using I      = Traits::index_v_t;
     size_t VLEN = __riscv_vlenb();
-    const size_t simdLength = (VLEN * LMUL) / SEW;
+    const size_t simdLength = Traits::setvl(-1);
     size_t niter = (query.size()+simdLength-1) / simdLength;
     niter = (niter < 2) ? 2 : niter;
 
