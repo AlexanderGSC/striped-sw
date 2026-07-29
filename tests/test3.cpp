@@ -28,11 +28,11 @@ int main(int arcg, char** argv) {
         Result r1 = riscv_ssw::strip_smith_waterman<1>(query,database);
         Score  s1 = std::get<2>(r1);
         Result r2 = riscv_ssw::strip_smith_waterman<2>(query,database);
-        Score  s2 = std::get<2>(r1);
+        Score  s2 = std::get<2>(r2);
         Result r4 = riscv_ssw::strip_smith_waterman<4>(query,database);
-        Score  s4 = std::get<2>(r1);
+        Score  s4 = std::get<2>(r4);
         Result r8 = riscv_ssw::strip_smith_waterman<8>(query,database);
-        Score  s8 = std::get<2>(r1);
+        Score  s8 = std::get<2>(r8);
 
         ssw::Workspace ws_test = ssw::Workspace(query.size()+1,ssw::vScore(database.size()+1,0));
         query.insert(query.begin(),ssw::Base{35}); //not used 
