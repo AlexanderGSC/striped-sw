@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     
     const auto finish = std::chrono::steady_clock::now();
 
-    // Detener contadores inmediatamente
+    // Stop counters
     cycles.stop();
     instructions.stop();
     l1_loads.stop();
@@ -130,7 +130,8 @@ int main(int argc, char* argv[]) {
         std::cout << "Miss Rate:       " << (double)l1_misses.get() / l1_loads.get() * 100.0 << "%\n";
     }
     std::cout << "Frontend Stalls: " << frontend_stalls.get() << "\n";
-    std::cout << "Backend Stalls:  " << backend_stalls.get() << "\n"; // Corregido aquí
+    std::cout << "Backend Stalls:  " << backend_stalls.get() << "\n";
+    std::cout << "Stalls Rate:     " << (double)backend_stalls.get() / cycles.get() * 100.0 << "%\n";
     std::cout << "Branches:        " << branches.get() << "\n";
     std::cout << "Branch Misses:   " << branch_misses.get() << "\n";
     if (branches.get() > 0) {
