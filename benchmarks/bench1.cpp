@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     const double seconds1 = d1.count();
 
     const double mcups1 = (total_cells / seconds1) / 1e6; // Mega Cell Updates / sec
-    const double gcups1 = mcups1 / 1000.0;               // Giga Cell Updates / sec
+    const double gcups1 = mcups1 / 1000.0;                // Giga Cell Updates / sec
 
     // 4. Salida por consola (fuera del bloque de tiempo)
     std::cout << "--- STRIP SMITH-WATERMAN RISC-V RVV (LMUL=" << CONFIG_LMUL << ") ---\n"
