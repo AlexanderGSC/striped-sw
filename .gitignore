@@ -15,6 +15,10 @@
 !.github/
 !*.yml
 !*.yaml
+!*.svg
+!*.py
+!*.png
+!*.csv
 
 
 # exe
