@@ -36,50 +36,75 @@ This repository is structured to show a clean evolutionary path from absolute lo
 
 1. **`Golden Reference Smith Waterman`:** A C++20/23 implementation of classic Smith-Waterman, used as a validation reference in unit tests.
 
-2. **`RISC-V RVV Acceleration`:** An emulated version of the algorithm using ```std::vector``` containers instead of architecture-specific vector registers. This algorithm serves as a validation basis for the final vectorized algorithm, as well as a version for compiler autovectorization. 
-   
-2. **`RISC-V RVV Acceleration`:**
+ 2. **`RISC-V RVV Acceleration`:**
 Translation of the Strip-Smith-Waterman algorithm’s logic to the RISC-V SIMD model using vector extensions. Vector intrinsics for different LMULs are derived through template specialization at compile time. This template specialization is found in the file ```rvv-traits.hpp```. Performance measurements will be conducted on the ***Banana BPI F3*** SBC, which  features eight ***SpaceMIT K1*** cores with a 256-bit VLEN. 
 
 3. **`SIMD Acceleration` (Work in Progress):**
    The next phase involves mapping the validated emulated logic directly to hardware vector intrinsics (SSE4.1, AVX2, and AVX-512) to achieve massive performance speedups.
 
 ---
-## Performance Analysis: Query Scaling (Fixed Database = 1,000,000 bp)
+## Performance Analysis: Query Scaling (Fixed Database = 1,00,000 bp)
 
 Evaluated natively on real silicon (**Banana Pi BPI-F3**, SpaceMit K1 octacore, RISC-V RVV 1.0 at `LMUL = 1`) comparing the scalar baseline against the vectorized Farrar Striped implementation:
 
-| Query ($M$) | Database ($N$) | Matrix Cells ($M \times N$) | Scalar Time (MCUPS) | RVV 1.0 Time (MCUPS) | Speedup | Architectural Analysis |
+| Query Size | Total Cells | Scalar Time (MCUPS) | MCUPS LMUL=1 (Speedup) | MCUPS LMUL=2 (Speedup) | MCUPS LMUL=4 (Speedup) | MCUPS LMUL=8 (Speedup) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **100** | **1,000,000** | $10^8$ | $1.50 \text{ s}$ ($66.6$) | **$0.47 \text{ s}$ ($212.5$)** | **$3.19\times$** | Setup and vector loop initialization overhead dominates. |
-| **200** | **1,000,000** | $2 \times 10^8$ | $3.00 \text{ s}$ ($66.7$) | **$0.73 \text{ s}$ ($273.9$)** | **$4.11\times$** | Vector pipeline warm-up and increased instruction density. |
-| **500** | **1,000,000** | $5 \times 10^8$ | $7.47 \text{ s}$ ($66.9$) | **$1.60 \text{ s}$ ($311.8$)** | **$4.66\times$** | Near-optimal vector register utilization. |
-| **1,000** | **1,000,000** | $10^9$ | $14.92 \text{ s}$ ($67.0$) | **$3.03 \text{ s}$ ($\mathbf{330.3}$)** | **$\mathbf{4.93\times}$** | **Peak Throughput (L1 Data Cache Sweet Spot).** |
-| **2,000** | **1,000,000** | $2 \times 10^9$ | $29.80 \text{ s}$ ($67.1$) | **$7.19 \text{ s}$ ($278.3$)** | **$4.15\times$** | Cache line eviction / L1 miss pressure degradation. |
+| **$1000$**    | **$10^8$**    |  **$1.54 \text{ s}$ ($64.71$)**   | **$326.32$ ($5.04$)** | **$472.06$ ($7.35$)**| **$589.31$ ($8.46$)**| **$343.6$ ($4.92$)**    |
+| **$2000$**    | **$2 \times 10^8$**    |  **$3.10 \text{ s}$ ($64.57$)**   | **$272.49$ ($4.22$)** | **$453.74$ ($7.08$)**| **$643.61$ ($9.20$)**| **$423.18$ ($6.04$)** |
+| **$5000$**    | **$5 \times 10^8$**    |  **$7.73 \text{ s}$ ($64.69$)**   | **$304.51$ ($4.70$)** | **$380.39$ ($5.93$)**| **$527.32$ ($7.55$)**| **$488.39$ ($5.84$)** |
+| **$10000$**    | **$10^9$**    |  **$15.49 \text{ s}$ ($64.54$)**   | **$309.49$ ($4.79$)** | **$430.27$ ($6.70$)**| **$557.81$ ($7.98$)**| **$462.07$ ($6.62$)** |
+
 
 > 💡 **Key Takeaways:**
-> * **Scalar Baseline Consistency:** The classic scalar implementation exhibits near-constant execution throughput ($\approx 66.7 \text{ MCUPS}$), confirming a stable hardware testbench and clock frequency.
-> * **Optimal Working Set ($Q = 1000$):** Peak efficiency reaches **$330.3 \text{ MCUPS}$** ($4.93\times$ speedup). At this query length, vector striping aligns perfectly with the L1 Data Cache capacity and register file layout.
-> * **Memory Hierarchy Bottleneck ($Q = 2000$):** Performance drops to $278.3 \text{ MCUPS}$ as intermediate vector buffer arrays outgrow the L1 cache footprint, increasing strided memory access stalls.
+> * **Scalar Baseline Consistency:** The classic scalar implementation exhibits near-constant execution throughput ($\approx 64.5 \text{ MCUPS}$), confirming a stable hardware testbench and clock frequency.
+> * **Optimal Working Set ($Q = 2000$):** Peak efficiency reaches $643.61$ MCUPS ($9.20\times$ speedup) for LMUL=4. At this query length, vector striping aligns perfectly with the L1 Data Cache capacity and register file layout.
+> * **L1 Cache Eviction for ($Q > 2000$):** As the size of the query profile exceeds the capacity of the L1 cache, the phenomenon of cache eviction becomes more evident.
 
 
 ## Performance Analysis: Problem Size Scaling ($M = N$ Square Matrix)
 
-Evaluated natively on real silicon (**Banana Pi BPI-F3**, SpaceMit K1 octacore, RISC-V RVV 1.0 at `LMUL = 1`) evaluating the asymptotic algorithmic scaling ($O(N^2)$) from small sequences up to $50,000 \times 50,000$ alignment matrices:
+Evaluated natively on **SpaceMit K1** RVV 1.0 at `LMUL = 4` evaluating the asymptotic algorithmic scaling ($O(N^2)$) from small sequences up to $50,000 \times 50,000$ alignment matrices:
 
-| Matrix Size ($M \times N$) | Total Cells | Scalar Time (MCUPS) | RVV 1.0 Time (MCUPS) | Speedup | Architectural Behavior |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **$100 \times 100$** | $10^4$ | $0.16 \text{ ms}$ ($61.5$) | **$0.09 \text{ ms}$ ($104.8$)** | **$1.70\times$** | Setup and loop overhead dominant at ultra-short lengths. |
-| **$200 \times 200$** | $4 \times 10^4$ | $0.61 \text{ ms}$ ($65.5$) | **$0.22 \text{ ms}$ ($180.3$)** | **$2.75\times$** | Rapid vector pipeline warm-up. |
-| **$500 \times 500$** | $2.5 \times 10^5$ | $3.79 \text{ ms}$ ($65.9$) | **$1.00 \text{ ms}$ ($249.9$)** | **$3.79\times$** | Approaching high vector register occupancy. |
-| **$1,000 \times 1,000$** | $10^6$ | $15.20 \text{ ms}$ ($65.8$) | **$3.26 \text{ ms}$ ($306.8$)** | **$4.66\times$** | **Optimal L1 cache locality plateau.** |
-| **$5,000 \times 5,000$** | $2.5 \times 10^7$ | $383.30 \text{ ms}$ ($65.2$) | **$84.05 \text{ ms}$ ($297.4$)** | **$4.56\times$** | Sustained high throughput ($\approx 300 \text{ MCUPS}$). |
-| **$10,000 \times 10,000$** | $10^8$ | $1.51 \text{ s}$ ($66.2$) | **$0.32 \text{ s}$ ($\mathbf{310.5}$)** | **$\mathbf{4.69\times}$** | **Peak Workload Throughput.** |
-| **$50,000 \times 50,000$** | $2.5 \times 10^9$ | $37.71 \text{ s}$ ($66.3$) | **$11.74 \text{ s}$ ($213.0$)** | **$3.21\times$** | Heavy L1/L2 cache thrashing & RAM memory bus starvation. |
+## 📊 Performance Benchmark: Classic SW vs. SSW RVV (`LMUL=4`)
+
+Execution comparison on **SpaceMIT K1 (RISC-V Vector 1.0)** measuring CPU execution time, throughput (MCUPS), and vector speedup across various sequence matrix dimensions.
+
+| Query Size | Profile | Total Cells | Classic SW Time | Classic SW (MCUPS) | SSW RVV Time | SSW RVV (MCUPS) | Speedup |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **$100$** | **$100$** | $10^4$ | $0.153\text{ ms}$ | 65.22 | **$0.129\text{ ms}$** | **77.62** | **1.19×** |
+| **$200$** | **$200$** | $4 \times 10^4$ | $0.625\text{ ms}$ | 64.02 | **$0.379\text{ ms}$** | **105.49** | **1.65×** |
+| **$500$** | **$500$** | $2.5 \times 10^5$ | $3.650\text{ ms}$ | 68.49 | **$0.697\text{ ms}$** | **358.63** | **5.24×** |
+| **$1000$** | **$1000$** | $10^6$ | $14.736\text{ ms}$ | 67.86 | **$2.214\text{ ms}$** | **451.78** | **6.66×** |
+| **$2000$** | **$2000$** | $4 \times 10^6$ | $58.539\text{ ms}$ | 68.33 | **$7.607\text{ ms}$** | **525.83** | **7.70×** |
+| **$5000** | **$5000** | $2.5 \times 10^7$ | $369.940\text{ ms}$ | 67.58 | **$51.570\text{ ms}$** | **484.78** | **7.17×** |
+| **$10000** | **$10000** | $10^8$ | $1.460\text{ s}$ | 68.50 | **$175.603\text{ ms}$** | **569.47** | **8.31×** |
+| **$20000$** | **$20000** | $4 \times 10^8$ | $5.823\text{ s}$ | 68.70 | **$673.849\text{ ms}$** | **593.61** | **8.64×** |
+| **$50000$** | **$50000** | $2.5 \times 10^9$ | $36.357\text{ s}$ | 68.76 | **$5.521\text{ s}$** | **452.84** | **6.59×** |
+
+> **Peak Acceleration:** Achieved **8.64× Speedup** (593.61 MCUPS) on $20\,000 \times 20\,000$ alignment matrices.
 
 >  **Architectural Summary:**
-> * **Asymptotic Peak:** The RVV 1.0 vector unit reaches a stable efficiency plateau of **$\sim 300 - 310 \text{ MCUPS}$** for workloads ranging between $10^6$ and $10^8$ total matrix cells.
-> * **L2/DRAM Bottleneck Boundary:** Beyond $10.000 \times 10.000$ elements, intermediate vector state buffers exceed the physical hardware cache boundaries, resulting in a **$\sim 31\%$ throughput degradation** due to DRAM latency penalties during vector register reloads.
+>* **Scalar Baseline Stability:** Classic SW exhibits flat performance at $\sim 68.5\text{ MCUPS}$ regardless of input length due to execution pipeline latency bound loops.
+>* **Vector Vectorization Gain:** RVV Striped SW rapidly scales throughput beyond $500\text{ MCUPS}$ once vector register saturation improves instruction density ($|Q| \ge 2\,000$).
+>* **Memory Hierarchy Impact:** At extreme lengths ($50\,000\times 50\,000$, $2.5\times 10^9$ cells), throughput lowers to $452.84\text{ MCUPS}$ due to memory subsystem limits and L2 cache capacity pressure.
+
+---
+
+### 4.2. Vector Length Multiplier (LMUL) Trade-off Analysis
+
+Experimental profiling on the SpaceMIT K1 processor reveals a strict structural trade-off between instruction efficiency and vector register availability across varying query lengths ($|Q| \in [1000, 10000]$):
+
+![](./scripts/rvv_ssw_profiling_full.svg)
+
+1. **Optimal Operating Point (LMUL = 4):**
+   - **Throughput:** Reaches a peak throughput of **630.74 MCUPS** ($|Q|=2000$) and maintains an average throughput of **558.2 MCUPS**, representing a **1.81× speedup** over the `LMUL=1` baseline.
+   - **Instruction Density:** Evaluates up to **1.69 cells per instruction issued** (`cells_per_inst`), reducing total dynamic instruction count by up to 74% compared to `LMUL=1`.
+
+2. **Register Spilling & Collapse at LMUL = 8:**
+   - **Register Pressure:** Aggregating vector registers into groups of 8 reduces the architectural register file to only 4 logical vector registers.
+   - **Cache Load Surge:** For $|Q|=10,000$, memory read requests (L1 Data Loads) drop from **690.1M** (`LMUL=1`) down to **464.3M** (`LMUL=4`). However, under `LMUL=8`, register spilling forces stack spills, causing L1 Data Loads to surge by **+29.7%** up to **602.1M**.
+   - **Execution Pipeline Saturation:** Pipeline stall analysis confirms that `LMUL=8` induces severe execution latency stalls, elevating **Backend Stalls to >91.4%** and degrading the hardware IPC down to **0.124**.
+
 ---
 
 ### Getting Started
