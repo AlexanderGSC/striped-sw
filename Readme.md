@@ -43,7 +43,7 @@ Translation of the Strip-Smith-Waterman algorithm’s logic to the RISC-V SIMD m
    The next phase involves mapping the validated emulated logic directly to hardware vector intrinsics (SSE4.1, AVX2, and AVX-512) to achieve massive performance speedups.
 
 ---
-## Performance Analysis: Query Scaling (Fixed Database = 1,00,000 bp)
+## Performance Analysis: Query Scaling (Fixed Database = 100,000 bp)
 
 Evaluated natively on real silicon (**Banana Pi BPI-F3**, SpaceMit K1 octacore, RISC-V RVV 1.0 at `LMUL = 1`) comparing the scalar baseline against the vectorized Farrar Striped implementation:
 

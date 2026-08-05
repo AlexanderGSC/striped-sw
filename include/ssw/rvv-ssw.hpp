@@ -97,6 +97,42 @@ Workspace generate_query_profile2(const Sequence& q) {
 }
 
 
+template <std::size_t LMUL>
+Workspace gqp(const Sequence& q, const size_t numRegs) {
+    //const size_t LMUL = 2;
+    using Traits = rvv_traits<int16_t,LMUL>;
+    using T = Traits::vector_t;
+    using I = Traits::index_v_t;
+  
+    const size_t sizeReg = Traits::setvl(-1);
+    const size_t efectiveVLEN = (q.size()+numRegs-1) / numRegs;
+
+    Workspace qp(num_bases, vScore(numRegs * sizeReg, 0));
+    
+    for (Base a : all_bases) {
+        //const size_t max_vl = sizeReg;
+        const size_t max_vl = Traits::setvl(-1);
+        for (size_t n=0; n<numRegs; ++n ) { 
+            T val = Traits::move(0,max_vl); //val=0
+            size_t vl = 0;
+            for (size_t k=0; k<efectiveVLEN; ++k) 
+                if (n + k*numRegs < q.size()) vl++;
+                else break;
+            //std::cout << "N= " << n << " EFECTIVE VLEN: " << vl << " MAX VL: " << max_vl << " i=" << i << " REMAINING: " << q.size()-i << std::endl;
+            if (vl > 0) {
+                I idx = Traits::ldse(&q[n], static_cast<ptrdiff_t>(numRegs), vl);
+                idx = Traits::sll(idx, 1, vl);
+                // loads Score from score matrix for elem a with stride = idx
+                //loading a max of 32 elements requires a LMUL=2 for int16_t
+                val = Traits::loxe(score[a].data(),idx, vl);  
+            }
+            Traits::store(&qp[a][n*max_vl], val, vl);
+        }
+    }
+    return qp;
+}
+
+
 
 //  riscv64-linux-gnu-g++ -march=rv64gcv -mabi=lp64d -std=c++23 -static testv.cpp -o testv
 template <std::size_t LMUL>
@@ -111,7 +147,7 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
     niter = (niter < 2) ? 2 : niter;
 
     const Workspace query_profile = generate_query_profile2<LMUL>(query);
-    //std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
+    std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
    
     Workspace vHLoad(niter, vScore(simdLength, 0));
     Workspace vHStore(niter,vScore(simdLength, 0));
@@ -151,7 +187,7 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
                 max_score = max_v;
                 max_i = it-1;
                 max_j = j + max_idx*niter;
-                //std::cout << "New max val found! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+                std::cout << "New max val found! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
             }
             aux = Traits::load(vE[j].data(), simdLength); 
             vH  = Traits::max(vH, aux, simdLength);
@@ -186,6 +222,7 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
             vH = Traits::load(vHLoad[j].data(), simdLength);
             //vH = vHLoad[j];
         }
+
         //std::cout << ">> STARTING LAZY F-LOOP FOR DB=" << to_char(db) << " <<\n";
         size_t j = 0;
         vF = Traits::slideup_zero(vF, 1, simdLength);
@@ -229,7 +266,7 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
                 j = 0;
             }
         }
-        
+
 
         //std::cout << " END OF COLUMN DB=" << to_char(db) << "\n\n";
         it++; 
@@ -241,5 +278,217 @@ Result strip_smith_waterman(Sequence& query, Sequence &database) {
     //std::cout << "POSITION AT ROW=" << max_j << " COL=" << max_i << std::endl;
     //std::cout << "=================================\n";
 }
+
+
+
+template <std::size_t LMUL>
+Result sswlu(Sequence& query, Sequence &database) {
+
+    using Traits = rvv_traits<Score, LMUL>;
+    using T      = Traits::vector_t;
+    using I      = Traits::index_v_t;
+
+    const size_t simdLength = Traits::setvl(-1);
+    size_t niter = (query.size()+simdLength-1) / simdLength;
+    niter = (niter < 4) ? 4 : niter;
+    niter = (niter % 4 == 0) ? niter : ((niter / 4) + 1) * 4;
+    const Workspace query_profile = gqp<LMUL>(query,niter);
+
+    //std::cout << "SIMD REGISTER LENGTH: " << simdLength << " NUMBER OF REGISTERS:" << niter << std::endl;
+
+   
+    Workspace vHLoad(niter, vScore(simdLength, 0));
+    Workspace vHStore(niter,vScore(simdLength, 0));
+    Workspace vE(niter,vScore(simdLength, 0));
+
+    T vF   = Traits::move(Score{0},simdLength);
+
+    T vH0   = Traits::move(Score{0},simdLength);
+    T vH1   = Traits::move(Score{0},simdLength);
+    T vH2   = Traits::move(Score{0},simdLength);
+    T vH3   = Traits::move(Score{0},simdLength);
+
+    T vMax  = Traits::move(Score{0},simdLength);
+    T aux   = Traits::move(Score{0},simdLength);
+
+    size_t it = 1, max_i=0, max_j=0;
+    Score max_score = Score{0};
+
+    for (Base db : database) {
+
+        vF = Traits::move(Score{0},simdLength);
+        
+        std::swap(vHLoad, vHStore);
+
+        aux = Traits::load(vHLoad[niter-1].data(), simdLength);
+        vH0 = Traits::slideup_zero(aux,1,simdLength);
+
+        
+        for (size_t j=0; j < niter; j += 4) {
+
+            T vE_j0, vE_j1, vE_j2, vE_j3;
+
+            size_t stride0 = (j+0) * simdLength;
+            size_t stride1 = (j+1) * simdLength;
+            size_t stride2 = (j+2) * simdLength;
+            size_t stride3 = (j+3) * simdLength;
+
+            //std::cout << "-------- IT=" << it << " DB=" << ssw::to_char(db) << " j=" << j << " stride=" << stride1 << "--------\n";
+
+            // BLOCK 0
+            aux  = Traits::load((Score *)&query_profile[db][stride0], simdLength);
+            vH0  = Traits::add(vH0,  aux, simdLength);
+            vMax = Traits::max(vH0, vMax, simdLength);
+            vE_j0= Traits::load(vE[j+0].data(), simdLength);
+            vH0  = Traits::max(vH0, vE_j0, simdLength);
+            vH0  = Traits::max(vH0, vF, simdLength);
+            Traits::store(vHStore[j+0].data(), vH0, simdLength);
+            Score max_v0 = Traits::max(vMax,simdLength);
+            if (max_v0 > max_score) {
+                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v0,simdLength);
+                max_score = max_v0;
+                max_i = it-1;
+                max_j = (j + 0) + max_idx * niter;
+                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+            }
+
+            vH0  = Traits::add(vH0, gap_init, simdLength);
+            vE_j0= Traits::add(vE_j0, gap_extent, simdLength);
+            vE_j0= Traits::max(vH0, vE_j0, simdLength);
+            Traits::store(vE[j+0].data(), vE_j0, simdLength);
+            vF   = Traits::add(vF,  gap_extent, simdLength);
+            vF   = Traits::max(vF, vH0, simdLength);
+
+            // BLOCK 1
+            vH1  = Traits::load(vHLoad[j+0].data(), simdLength);
+            aux  = Traits::load((Score *)&query_profile[db][stride1], simdLength);
+            vH1  = Traits::add(vH1,  aux, simdLength);
+            vMax = Traits::max(vH1, vMax, simdLength);
+            vE_j1= Traits::load(vE[j+1].data(), simdLength);
+            vH1  = Traits::max(vH1, vE_j1, simdLength);
+            vH1  = Traits::max(vH1, vF, simdLength);
+            Traits::store(vHStore[j+1].data(), vH1, simdLength);
+            Score max_v1 = Traits::max(vMax,simdLength);
+            if (max_v1 > max_score) {
+                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v1,simdLength);
+                max_score = max_v1;
+                max_i = it-1;
+                max_j = (j + 1) + max_idx * niter;
+                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+            }
+
+            vH1  = Traits::add(vH1, gap_init, simdLength);
+            vE_j1= Traits::add(vE_j1, gap_extent, simdLength);
+            vE_j1= Traits::max(vH1, vE_j1, simdLength);
+            Traits::store(vE[j+1].data(), vE_j1, simdLength);
+            vF   = Traits::add(vF,  gap_extent, simdLength);
+            vF   = Traits::max(vF, vH1, simdLength);
+
+            // BLOCK 2
+            vH2  = Traits::load(vHLoad[j+1].data(), simdLength);
+            aux  = Traits::load((Score *)&query_profile[db][stride2], simdLength);
+            vH2  = Traits::add(vH2,  aux, simdLength);
+            vMax = Traits::max(vH2, vMax, simdLength);
+            vE_j2= Traits::load(vE[j+2].data(), simdLength);
+            vH2  = Traits::max(vH2, vE_j2, simdLength);
+            vH2  = Traits::max(vH2, vF, simdLength);
+            Traits::store(vHStore[j+2].data(), vH2, simdLength);
+            Score max_v2 = Traits::max(vMax,simdLength);
+            if (max_v2 > max_score) {
+                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v2,simdLength);
+                max_score = max_v2;
+                max_i = it-1;
+                max_j = (j + 2) + max_idx * niter;
+                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+            }
+
+            vH2  = Traits::add(vH2, gap_init, simdLength);
+            vE_j2= Traits::add(vE_j2, gap_extent, simdLength);
+            vE_j2= Traits::max(vH2, vE_j2, simdLength);
+            Traits::store(vE[j+2].data(), vE_j2, simdLength);
+            vF   = Traits::add(vF,  gap_extent, simdLength);
+            vF   = Traits::max(vF,  vH2, simdLength);
+
+            // BLOCK 3
+            vH3  = Traits::load(vHLoad[j+2].data(), simdLength);
+            aux  = Traits::load((Score *)&query_profile[db][stride3], simdLength);
+            vH3  = Traits::add(vH3,  aux, simdLength);
+            vMax = Traits::max(vH3, vMax, simdLength);
+            vE_j3= Traits::load(vE[j+3].data(), simdLength);
+            vH3  = Traits::max(vH3, vE_j3, simdLength);
+            vH3  = Traits::max(vH3, vF, simdLength);
+            Traits::store(vHStore[j+3].data(), vH3, simdLength);
+            Score max_v3 = Traits::max(vMax,simdLength);
+            if (max_v3 > max_score) {
+                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v3,simdLength);
+                max_score = max_v3;
+                max_i = it-1;
+                max_j = (j + 3) + max_idx * niter;
+                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+            }
+            vH3  = Traits::add(vH3, gap_init, simdLength);
+            vE_j3= Traits::add(vE_j3, gap_extent, simdLength);
+            vE_j3= Traits::max(vH3, vE_j3, simdLength);
+            Traits::store(vE[j+3].data(), vE_j3, simdLength);
+            vF   = Traits::add(vF,  gap_extent, simdLength);
+            vF   = Traits::max(vF, vH3, simdLength);
+
+            vH0 = Traits::load(vHLoad[j+3].data(), simdLength);
+        }
+
+        // =================================================================
+        // CORRECCIÓN DEL LAZY F-LOOP
+        // =================================================================
+        // 1. Tomamos el vF final generado en el último sub-bloque (vF3)
+        // y le inyectamos la diagonal para la primera posición del bloque 0.
+        vF = Traits::slideup_zero(vF, 1, simdLength);
+
+        size_t j_lazy = 0;
+        bool loop_again = true;
+
+        // Hacemos pasadas hasta que ningún vF supere a vH + gap_init en ningún bloque
+        for (size_t r = 0; r < niter && loop_again; ++r) {
+            loop_again = false;
+            for (size_t k = 0; k < niter; ++k) {
+        
+                // Cargar el vH actual guardado
+                aux = Traits::load(vHStore[k].data(), simdLength);
+                // Si algún elemento de vF supera a vH
+                if (Traits::any_greater(vF, vHStore[k].data(), gap_init, simdLength)) {
+                    loop_again = true;
+                    // Actualizar vH con el vF que viene del arrastre
+                    aux = Traits::max(aux, vF, simdLength);
+                    Traits::store(vHStore[k].data(), aux, simdLength);
+
+                    // Re-evaluar el máximo global si vH aumentó
+                    vMax = Traits::max(vMax, aux, simdLength);
+                    Score max_v = Traits::max(vMax, simdLength);
+                    if (max_v > max_score) {
+                        size_t max_idx = (size_t) Traits::max_idx(vMax, max_v, simdLength);
+                        max_score = max_v;
+                        max_i = it - 1;
+                        max_j = max_idx + (k * simdLength);
+                    }
+                }
+
+                // Propagar vF hacia el siguiente bloque (k + 1):
+                // vF_next = max(vF + gap_extent, aux + gap_init)
+                T vF_ext  = Traits::add(vF, gap_extent, simdLength);
+                T vH_init = Traits::add(aux, gap_init, simdLength);
+                vF = Traits::max(vF_ext, vH_init, simdLength);
+        
+                // Al llegar al último bloque de la fila (k == niter - 1),
+                // desplazamos el vector 1 carril para conectar el final con el inicio de la query.
+                if (k == niter - 1) {
+                    vF = Traits::slideup_zero(vF, 1, simdLength);
+                }
+            }
+        }
+        
+        it++;
+    }
+    return std::make_tuple(max_j,max_i,max_score);
+}
+
 
 }
