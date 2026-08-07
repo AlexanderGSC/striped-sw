@@ -354,7 +354,7 @@ Result sswlu(Sequence& query, Sequence &database) {
 
             vH0  = Traits::add(vH0, gap_init, simdLength);
             vE_j0= Traits::add(vE_j0, gap_extent, simdLength);
-            vE_j0= Traits::max(vH0, vE_j0, simdLength);
+            vE_j0= Traits::max(vE_j0, vH0, simdLength);
             Traits::store(vE[j+0].data(), vE_j0, simdLength);
             vF   = Traits::add(vF,  gap_extent, simdLength);
             vF   = Traits::max(vF, vH0, simdLength);
