@@ -50,12 +50,6 @@ foreach(lmul ${LMUL_VALUES})
     target_link_options(${EXEC_NAME} PRIVATE ${RISCV_FLAGS} ${OPTIMIZATION_FLAGS} -static)
 endforeach()
     
-add_executable(bench4 benchmarks/bench4.cpp)
-target_include_directories(bench4 PRIVATE include)
-target_compile_options(bench4 PRIVATE ${RISCV_FLAGS} ${OPTIMIZATION_FLAGS})
-target_link_options(bench4 PRIVATE ${RISCV_FLAGS} -static)
-
-
 # Executables: Unit Tests
 add_executable(unit_test1 tests/test.cpp)
 target_include_directories(unit_test1 PRIVATE include)
