@@ -334,110 +334,93 @@ Result sswlu(Sequence& query, Sequence &database) {
             size_t stride3 = (j+3) * simdLength;
 
             //std::cout << "-------- IT=" << it << " DB=" << ssw::to_char(db) << " j=" << j << " stride=" << stride1 << "--------\n";
-
-            // BLOCK 0
+            vH1  = Traits::load(vHLoad[j+0].data(), simdLength);
+            vH2  = Traits::load(vHLoad[j+1].data(), simdLength);
+            vH3  = Traits::load(vHLoad[j+2].data(), simdLength);
+            
             aux  = Traits::load((Score *)&query_profile[db][stride0], simdLength);
             vH0  = Traits::add(vH0,  aux, simdLength);
-            vMax = Traits::max(vH0, vMax, simdLength);
-            vE_j0= Traits::load(vE[j+0].data(), simdLength);
-            vH0  = Traits::max(vH0, vE_j0, simdLength);
-            vH0  = Traits::max(vH0, vF, simdLength);
-            Traits::store(vHStore[j+0].data(), vH0, simdLength);
-            Score max_v0 = Traits::max(vMax,simdLength);
-            if (max_v0 > max_score) {
-                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v0,simdLength);
-                max_score = max_v0;
-                max_i = it-1;
-                max_j = (j + 0) + max_idx * niter;
-                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
-            }
+            aux  = Traits::load((Score *)&query_profile[db][stride1], simdLength);
+            vH1  = Traits::add(vH1,  aux, simdLength);
+            aux  = Traits::load((Score *)&query_profile[db][stride2], simdLength);
+            vH2  = Traits::add(vH2,  aux, simdLength);
+            aux  = Traits::load((Score *)&query_profile[db][stride3], simdLength);
+            vH3  = Traits::add(vH3,  aux, simdLength);
 
-            vH0  = Traits::add(vH0, gap_init, simdLength);
+            vMax = Traits::max(vMax, vH0, simdLength);
+            Score max_v0 = Traits::max(vMax, simdLength);
+            vMax = Traits::max(vMax, vH1, simdLength);
+            Score max_v1 = Traits::max(vMax, simdLength);
+            vMax = Traits::max(vMax, vH2, simdLength);
+            Score max_v2 = Traits::max(vMax, simdLength);
+            vMax = Traits::max(vMax, vH3, simdLength);
+            Score max_v3 = Traits::max(vMax, simdLength);
+            
+            vE_j0= Traits::load(vE[j+0].data(), simdLength);
+            vE_j1= Traits::load(vE[j+1].data(), simdLength);
+            vE_j2= Traits::load(vE[j+2].data(), simdLength);
+            vE_j3= Traits::load(vE[j+3].data(), simdLength);
+            
+            vH0  = Traits::max(vH0, vE_j0, simdLength);
+            vH1  = Traits::max(vH1, vE_j1, simdLength);
+            vH2  = Traits::max(vH2, vE_j2, simdLength);
+            vH3  = Traits::max(vH3, vE_j3, simdLength);
+
             vE_j0= Traits::add(vE_j0, gap_extent, simdLength);
+            vE_j1= Traits::add(vE_j1, gap_extent, simdLength);
+            vE_j2= Traits::add(vE_j2, gap_extent, simdLength);
+            vE_j3= Traits::add(vE_j3, gap_extent, simdLength);
+
+            vH0  = Traits::max(vH0, vF, simdLength);  
+            Traits::store(vHStore[j+0].data(), vH0, simdLength);
+            vH0  = Traits::add(vH0, gap_init, simdLength);            
             vE_j0= Traits::max(vE_j0, vH0, simdLength);
             Traits::store(vE[j+0].data(), vE_j0, simdLength);
             vF   = Traits::add(vF,  gap_extent, simdLength);
             vF   = Traits::max(vF, vH0, simdLength);
 
-            // BLOCK 1
-            vH1  = Traits::load(vHLoad[j+0].data(), simdLength);
-            aux  = Traits::load((Score *)&query_profile[db][stride1], simdLength);
-            vH1  = Traits::add(vH1,  aux, simdLength);
-            vMax = Traits::max(vH1, vMax, simdLength);
-            vE_j1= Traits::load(vE[j+1].data(), simdLength);
-            vH1  = Traits::max(vH1, vE_j1, simdLength);
-            vH1  = Traits::max(vH1, vF, simdLength);
+            vH1  = Traits::max(vH1, vF, simdLength);  
             Traits::store(vHStore[j+1].data(), vH1, simdLength);
-            Score max_v1 = Traits::max(vMax,simdLength);
-            if (max_v1 > max_score) {
-                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v1,simdLength);
-                max_score = max_v1;
-                max_i = it-1;
-                max_j = (j + 1) + max_idx * niter;
-                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
-            }
-
-            vH1  = Traits::add(vH1, gap_init, simdLength);
-            vE_j1= Traits::add(vE_j1, gap_extent, simdLength);
-            vE_j1= Traits::max(vH1, vE_j1, simdLength);
+            vH1  = Traits::add(vH1, gap_init, simdLength);            
+            vE_j1= Traits::max(vE_j1, vH1, simdLength);
             Traits::store(vE[j+1].data(), vE_j1, simdLength);
             vF   = Traits::add(vF,  gap_extent, simdLength);
             vF   = Traits::max(vF, vH1, simdLength);
 
-            // BLOCK 2
-            vH2  = Traits::load(vHLoad[j+1].data(), simdLength);
-            aux  = Traits::load((Score *)&query_profile[db][stride2], simdLength);
-            vH2  = Traits::add(vH2,  aux, simdLength);
-            vMax = Traits::max(vH2, vMax, simdLength);
-            vE_j2= Traits::load(vE[j+2].data(), simdLength);
-            vH2  = Traits::max(vH2, vE_j2, simdLength);
+
             vH2  = Traits::max(vH2, vF, simdLength);
             Traits::store(vHStore[j+2].data(), vH2, simdLength);
-            Score max_v2 = Traits::max(vMax,simdLength);
-            if (max_v2 > max_score) {
-                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v2,simdLength);
-                max_score = max_v2;
-                max_i = it-1;
-                max_j = (j + 2) + max_idx * niter;
-                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
-            }
-
-            vH2  = Traits::add(vH2, gap_init, simdLength);
-            vE_j2= Traits::add(vE_j2, gap_extent, simdLength);
-            vE_j2= Traits::max(vH2, vE_j2, simdLength);
+            vH2  = Traits::add(vH2, gap_init, simdLength);            
+            vE_j2= Traits::max(vE_j2, vH2, simdLength);
             Traits::store(vE[j+2].data(), vE_j2, simdLength);
             vF   = Traits::add(vF,  gap_extent, simdLength);
-            vF   = Traits::max(vF,  vH2, simdLength);
+            vF   = Traits::max(vF, vH2, simdLength);
 
-            // BLOCK 3
-            vH3  = Traits::load(vHLoad[j+2].data(), simdLength);
-            aux  = Traits::load((Score *)&query_profile[db][stride3], simdLength);
-            vH3  = Traits::add(vH3,  aux, simdLength);
-            vMax = Traits::max(vH3, vMax, simdLength);
-            vE_j3= Traits::load(vE[j+3].data(), simdLength);
-            vH3  = Traits::max(vH3, vE_j3, simdLength);
-            vH3  = Traits::max(vH3, vF, simdLength);
+            vH3  = Traits::max(vH3, vF, simdLength); 
             Traits::store(vHStore[j+3].data(), vH3, simdLength);
-            Score max_v3 = Traits::max(vMax,simdLength);
-            if (max_v3 > max_score) {
-                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v3,simdLength);
-                max_score = max_v3;
-                max_i = it-1;
-                max_j = (j + 3) + max_idx * niter;
-                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
-            }
-            vH3  = Traits::add(vH3, gap_init, simdLength);
-            vE_j3= Traits::add(vE_j3, gap_extent, simdLength);
-            vE_j3= Traits::max(vH3, vE_j3, simdLength);
+            vH3  = Traits::add(vH3, gap_init, simdLength);            
+            vE_j3= Traits::max(vE_j3, vH3, simdLength);
             Traits::store(vE[j+3].data(), vE_j3, simdLength);
             vF   = Traits::add(vF,  gap_extent, simdLength);
             vF   = Traits::max(vF, vH3, simdLength);
+
+            Score max_v = std::max({max_v0,max_v1,max_v2,max_v3});
+            if (max_v > max_score) {
+                size_t max_idx = (size_t) Traits::max_idx(vMax,max_v,simdLength);
+                max_score = max_v;
+                max_i = it-1;
+                max_j = (max_v == max_v0) ? (j + 0) + max_idx * niter : max_j;
+                max_j = (max_v == max_v1) ? (j + 1) + max_idx * niter : max_j;
+                max_j = (max_v == max_v2) ? (j + 2) + max_idx * niter : max_j;
+                max_j = (max_v == max_v3) ? (j + 3) + max_idx * niter : max_j;
+                //std::cout << "New max val found1! v=" << max_score << " i=" << max_i << " j=" << max_j << std::endl;
+            }
 
             vH0 = Traits::load(vHLoad[j+3].data(), simdLength);
         }
 
         // =================================================================
-        // CORRECCIÓN DEL LAZY F-LOOP
+        // LAZY F-LOOP
         // =================================================================
         // 1. Tomamos el vF final generado en el último sub-bloque (vF3)
         // y le inyectamos la diagonal para la primera posición del bloque 0.

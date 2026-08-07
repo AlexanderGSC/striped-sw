@@ -49,12 +49,11 @@ foreach(lmul ${LMUL_VALUES})
     target_compile_options(${EXEC_NAME} PRIVATE ${RISCV_FLAGS} ${OPTIMIZATION_FLAGS} -DCONFIG_LMUL=${lmul})
     target_link_options(${EXEC_NAME} PRIVATE ${RISCV_FLAGS} ${OPTIMIZATION_FLAGS} -static)
 endforeach()
-
-set(EXEC_NAME "bench4")    
-add_executable(${EXEC_NAME} benchmarks/bench4.cpp)
-target_include_directories(${EXEC_NAME} PRIVATE include)
-target_compile_options(${EXEC_NAME} PRIVATE ${RISCV_FLAGS} ${OPTIMIZATION_FLAGS})
-target_link_options(${EXEC_NAME} PRIVATE ${RISCV_FLAGS} -static)
+    
+add_executable(bench4 benchmarks/bench4.cpp)
+target_include_directories(bench4 PRIVATE include)
+target_compile_options(bench4 PRIVATE ${RISCV_FLAGS} ${OPTIMIZATION_FLAGS})
+target_link_options(bench4 PRIVATE ${RISCV_FLAGS} -static)
 
 
 # Executables: Unit Tests
